@@ -26,9 +26,11 @@ tubes = null
 invs = null
 bird = null
 ground = null
+coin = null;
 
 score = null
 scoreText = null
+totalCoins = 0
 instText = null
 gameOverText = null
 
@@ -39,9 +41,6 @@ fallSnd = null
 swooshSnd = null
 
 tubesTimer = null
-
-githubHtml = """<iframe src="http://ghbtns.com/github-btn.html?user=hyspace&repo=flappy&type=watch&count=true&size=large"
-  allowtransparency="true" frameborder="0" scrolling="0" width="150" height="30"></iframe>"""
 
 floor = Math.floor
 
@@ -102,7 +101,7 @@ main = ->
   addScore = (_, inv) ->
     invs.remove inv
     score += 1
-    scoreText.setText score
+    scoreText.setText "  x" + score
     scoreSnd.play()
     return
 
@@ -117,7 +116,13 @@ main = ->
     hiscore = (if hiscore then hiscore else score)
     hiscore = (if score > parseInt(hiscore, 10) then score else hiscore)
     window.localStorage.setItem "hiscore", hiscore
-    gameOverText.setText "GAMEOVER\n\nHIGH SCORE\n\n" + hiscore
+    totalCoins = window.localStorage.getItem("totalCoins")
+    totalCoins = (if totalCoins then totalCoins else hiscore)
+    totalCoins = parseInt(totalCoins, 10) + parseInt(score, 10)
+    totalCoins = (if totalCoins then totalCoins else 0)
+    window.localStorage.setItem "totalCoins", totalCoins
+    console.log(totalCoins)
+    gameOverText.setText "GAMEOVER\n\nCoins: " + totalCoins + "\n\nHighscore: " + hiscore
     gameOverText.renderable = true
 
     # Stop all tubes
@@ -158,9 +163,9 @@ main = ->
     assets =
       spritesheet:
         bird: [
-          "assets/bird.png"
+          "assets/cat.png"
           36
-          26
+          36
         ]
 
       image:
@@ -168,13 +173,14 @@ main = ->
         tubeBottom: ["assets/tube2.png"]
         ground: ["assets/ground.png"]
         bg: ["assets/bg.png"]
+        coin: ["assets/coin.png"]
 
       audio:
-        flap: ["assets/sfx_wing.mp3"]
-        score: ["assets/sfx_point.mp3"]
-        hurt: ["assets/sfx_hit.mp3"]
-        fall: ["assets/sfx_die.mp3"]
-        swoosh: ["assets/sfx_swooshing.mp3"]
+        flap: ["assets/sfx_whip.mp3"]
+        score: ["assets/sfx_coin.mp3"]
+        hurt: ["assets/sfx_hit_meow.mp3"]
+        fall: ["assets/sfx_hit_meow.mp3"]
+        swoosh: ["assets/sfx_cat_meow.mp3"]
 
     Object.keys(assets).forEach (type) ->
       Object.keys(assets[type]).forEach (id) ->
@@ -186,9 +192,7 @@ main = ->
     return
 
   create = ->
-    console.log("%chttps://github.com/hyspace/flappy", "color: black; font-size: x-large");
     ratio = window.innerWidth / window.innerHeight
-    document.querySelector('#github').innerHTML = githubHtml if ratio > 1.15 or ratio < 0.7
     document.querySelector('#loading').style.display = 'none'
 
     # Set world dimensions
@@ -201,16 +205,6 @@ main = ->
     # Draw bg
     bg = game.add.tileSprite(0, 0, WIDTH, HEIGHT, 'bg')
 
-    # Credits 'yo
-    # credits = game.add.text(game.world.width / 2, HEIGHT - GROUND_Y + 50, "",
-    #   font: "8px \"Press Start 2P\""
-    #   fill: "#fff"
-    #   stroke: "#430"
-    #   strokeThickness: 4
-    #   align: "center"
-    # )
-    # credits.anchor.x = 0.5
-
 
     # # Add clouds group
     # clouds = game.add.group()
@@ -221,7 +215,7 @@ main = ->
     # Add invisible thingies
     invs = game.add.group()
 
-    # Add bird
+    # Add bird (cat)
     bird = game.add.sprite(0, 0, "bird")
     bird.anchor.setTo 0.5, 0.5
     bird.animations.add "fly", [
@@ -245,10 +239,10 @@ main = ->
     ground.tileScale.setTo SCALE, SCALE
 
     # Add score text
-    scoreText = game.add.text(game.world.width / 2, game.world.height / 4, "",
+    scoreText = game.add.text(game.world.width / 2, (game.world.height / 4 - 20), "",
       font: "16px \"Press Start 2P\""
       fill: "#fff"
-      stroke: "#430"
+      stroke: "#000"
       strokeThickness: 4
       align: "center"
     )
@@ -258,7 +252,7 @@ main = ->
     instText = game.add.text(game.world.width / 2, game.world.height - game.world.height / 4, "",
       font: "8px \"Press Start 2P\""
       fill: "#fff"
-      stroke: "#430"
+      stroke: "#000"
       strokeThickness: 4
       align: "center"
     )
@@ -266,9 +260,9 @@ main = ->
 
     # Add game over text
     gameOverText = game.add.text(game.world.width / 2, game.world.height / 2, "",
-      font: "16px \"Press Start 2P\""
+      font: "15px \"Press Start 2P\""
       fill: "#fff"
-      stroke: "#430"
+      stroke: "#000"
       strokeThickness: 4
       align: "center"
     )
@@ -282,6 +276,13 @@ main = ->
     fallSnd = game.add.audio("fall")
     swooshSnd = game.add.audio("swoosh")
 
+    #Add coin
+    coin = game.add.sprite(0, 0, "coin")
+    coin.anchor.setTo 0.5, 0.5
+    coin.x = 123
+    coin.y = 76.5
+    coin.visible = false
+
     # Add controls
     game.input.onDown.add flap
 
@@ -293,10 +294,10 @@ main = ->
     gameStarted = false
     gameOver = false
     score = 0
-    # credits.renderable = true
-    # credits.setText "see console log\nfor github url"
-    scoreText.setText "Flappy Bird"
-    instText.setText "TOUCH TO FLAP\nbird WINGS"
+    totalCoins = window.localStorage.getItem("totalCoins")
+    totalCoins = (if totalCoins then totalCoins else 0)
+    scoreText.setText "MEOW MEOW BIRD\n\nCoins earned: " + totalCoins
+    instText.setText "TOUCH TO BEGIN"
     gameOverText.renderable = false
     bird.body.allowGravity = false
     bird.reset game.world.width * 0.3, game.world.height / 2
@@ -304,11 +305,11 @@ main = ->
     bird.animations.play "fly"
     tubes.removeAll()
     invs.removeAll()
+    coin.visible = false
     return
 
   start = ->
 
-    # credits.renderable = false
     bird.body.allowGravity = true
     bird.body.gravity.y = GRAVITY
 
@@ -317,11 +318,13 @@ main = ->
 
 
     # Show score
-    scoreText.setText score
+    scoreText.setText " x" + score
     instText.renderable = false
 
     # START!
     gameStarted = true
+    coin.visible = false
+
     return
 
   update = ->
@@ -346,7 +349,10 @@ main = ->
         # Add score
         game.physics.overlap bird, invs, addScore
 
+        coin.visible = true
+
       else
+
         # rotate the bird to make sure its head hit ground
         tween = game.add.tween(bird).to(angle: 90, 100, Phaser.Easing.Bounce.Out, true);
         if bird.body.bottom >= GROUND_Y + 3
